@@ -77,11 +77,13 @@ namespace Antmicro.Renode.Storage
             var bytesToWriteCount = checked((int)Math.Min(count, Length - underlyingStream.Position));
             if(paddingOffset > 0)
             {
-                // this effectively grows the file filling it with `PaddingByte`
-                for(var i = 0; i < paddingOffset; i++)
+                // Grow file to current position efficiently (sparse/zero-filled by OS)
+                var targetPos = underlyingStream.Position + paddingOffset;
+                if(targetPos > underlyingStream.Length)
                 {
-                    underlyingStream.WriteByte(PaddingByte);
+                    underlyingStream.SetLength(targetPos);
                 }
+                underlyingStream.Seek(targetPos, System.IO.SeekOrigin.Begin);
                 paddingOffset = 0;
             }
             underlyingStream.Write(buffer, offset, bytesToWriteCount);
